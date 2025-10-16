@@ -10,8 +10,8 @@ pub(crate) enum Block {
     Paragraph(Vec<Run>),
     List { ordered: bool, items: Vec<Run> },
     Table { thead: TRow, tbody: Vec<TRow> },
-    CodeBlock,
-    BlockQuote,
+    Code,
+    Quote,
     HorizontalRule,
 }
 

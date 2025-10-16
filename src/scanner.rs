@@ -20,7 +20,7 @@ pub(crate) enum Token {
     LeftBracket,
     RightBracket,
     RightAngleBracket,
-    EOF,
+    Eof,
 }
 
 pub(crate) struct Scanner<'a> {
@@ -66,7 +66,7 @@ impl<'a> Scanner<'a> {
             Some(']') => Token::RightBracket,
             Some('>') => Token::RightAngleBracket,
             Some(c) => self.text(),
-            None => Token::EOF,
+            None => Token::Eof,
         }
     }
 
