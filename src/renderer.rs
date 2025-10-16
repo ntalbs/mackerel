@@ -26,6 +26,17 @@ impl Render for Run {
     }
 }
 
+impl Render for Block {
+    fn render(&self) -> String {
+        match self {
+            Block::Heading { level, runs } => {
+                format!("<h{level}>{}</h{level}", render_runs(runs))
+            }
+            _ => todo!(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{markdown::Run, renderer::Render};

@@ -6,7 +6,7 @@ pub struct Markdown {
 }
 
 pub(crate) enum Block {
-    Heading { level: u8, text: String },
+    Heading { level: u8, runs: Vec<Run> },
     Paragraph(Vec<Run>),
     List { ordered: bool, items: Vec<Run> },
     Table { thead: TRow, tbody: Vec<TRow> },
