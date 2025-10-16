@@ -1,7 +1,7 @@
 use std::{iter::Peekable, str::Chars};
 
 #[derive(Debug, PartialEq)]
-pub(crate) enum Token {
+pub enum Token {
     Text(String),
     Newline,
     Whitespace,
@@ -23,20 +23,20 @@ pub(crate) enum Token {
     Eof,
 }
 
-pub(crate) struct Scanner<'a> {
+pub struct Scanner<'a> {
     iter: Peekable<Chars<'a>>,
     current_char: Option<char>,
 }
 
 impl<'a> Scanner<'a> {
-    pub(crate) fn new(input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self {
             iter: input.chars().peekable(),
             current_char: Option::None,
         }
     }
 
-    pub(crate) fn scan(&mut self) -> Vec<Token> {
+    pub fn scan(&mut self) -> Vec<Token> {
         let mut tokens = Vec::new();
 
         while !self.is_at_end() {

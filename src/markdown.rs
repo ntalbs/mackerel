@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-pub(crate) struct Markdown {
+pub struct Markdown {
     pub(crate) front_matter: BTreeMap<String, String>,
     pub(crate) content: Vec<Block>,
 }
