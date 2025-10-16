@@ -7,3 +7,4 @@ edition = "2024"
 
 [dev-dependencies]
 p-test = "1.0.0"
+indoc = "2.0.6"

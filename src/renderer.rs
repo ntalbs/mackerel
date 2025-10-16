@@ -31,6 +31,8 @@ mod tests {
     use crate::{markdown::Run, renderer::Render};
     use p_test::p_test;
 
+    /// macros for runs
+
     macro_rules! t {
         ($input:literal) => {
             Run::Text($input.into())
@@ -61,7 +63,7 @@ mod tests {
                 url: $url.into(),
                 inner: vec![$($inner.into()), +],
             }
-        }
+        };
     }
 
     macro_rules! img {
@@ -82,7 +84,7 @@ mod tests {
     macro_rules! lineBreak {
         () => {
             Run::LineBreak
-        }
+        };
     }
 
     #[p_test(
