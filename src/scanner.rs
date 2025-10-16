@@ -73,10 +73,7 @@ impl<'a> Scanner<'a> {
     fn text(&mut self) -> Token {
         fn is_text_breaker(ch: Option<&char>) -> bool {
             if let Some(ch) = ch {
-                match ch {
-                    '*' | '_' | '[' | ']' | '(' | ')' | '\n' => true,
-                    _ => false,
-                }
+                matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '\n')
             } else {
                 false
             }
