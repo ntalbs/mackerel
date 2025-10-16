@@ -1,4 +1,12 @@
-use crate::markdown::Run;
+use crate::markdown::{Block, Run};
+
+fn render_runs(runs: &[Run]) -> String {
+    let mut s = String::new();
+    for r in runs {
+        s.push_str(&r.render());
+    }
+    s
+}
 
 trait Render {
     fn render(&self) -> String;
@@ -6,19 +14,11 @@ trait Render {
 
 impl Render for Run {
     fn render(&self) -> String {
-        fn render(runs: &[Run]) -> String {
-            let mut s = String::new();
-            for r in runs {
-                s.push_str(&r.render());
-            }
-            s
-        }
-
         match self {
             Run::Text(s) => s.clone(),
-            Run::Bold(runs) => format!("<b>{}</b>", render(runs)),
-            Run::Italic(runs) => format!("<i>{}</i>", render(runs)),
-            Run::Link { inner, url } => format!("<a href=\"{url}\">{}</a>", render(inner)),
+            Run::Bold(runs) => format!("<b>{}</b>", render_runs(runs)),
+            Run::Italic(runs) => format!("<i>{}</i>", render_runs(runs)),
+            Run::Link { inner, url } => format!("<a href=\"{url}\">{}</a>", render_runs(inner)),
             Run::Image { url, alt } => format!("<img src=\"{url}\" alt=\"{alt}\">"),
             Run::Code(code) => format!("<code>{code}</code>"),
             Run::LineBreak => "<br>".into(),
