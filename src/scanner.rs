@@ -65,7 +65,7 @@ impl<'a> Scanner<'a> {
             Some('[') => Token::LeftBracket,
             Some(']') => Token::RightBracket,
             Some('>') => Token::RightAngleBracket,
-            Some(c) => self.text(),
+            Some(_) => self.text(),
             None => Token::Eof,
         }
     }
@@ -73,7 +73,7 @@ impl<'a> Scanner<'a> {
     fn text(&mut self) -> Token {
         fn is_text_breaker(ch: Option<&char>) -> bool {
             if let Some(ch) = ch {
-                matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '\n')
+                matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '`' | '\n')
             } else {
                 false
             }
