@@ -115,6 +115,7 @@ mod tests {
 
     #[test]
     fn scanner_test() {
+        #[rustfmt::skip]
         let markdown_text = indoc!("
             # heading 1
 
