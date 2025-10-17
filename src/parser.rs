@@ -1,9 +1,7 @@
 use std::collections::BTreeMap;
 
-use crate::{
-    markdown::{Block, Markdown},
-    scanner::Token,
-};
+use crate::{Block, Markdown};
+use crate::scanner::Token;
 
 pub(crate) struct Parser<'a> {
     tokens: &'a [Token],
@@ -78,9 +76,9 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::{parser::Parser, scanner::Scanner};
     use indoc::indoc;
     use std::collections::BTreeMap;
-    use crate::{parser::Parser, scanner::Scanner};
 
     #[test]
     fn test() {

@@ -1,4 +1,4 @@
-use crate::markdown::{Block, Run};
+use crate::{Block, Run};
 
 fn render_runs(runs: &[Run]) -> String {
     let mut s = String::new();
@@ -39,7 +39,7 @@ impl Render for Block {
 
 #[cfg(test)]
 mod tests {
-    use crate::{markdown::Run, renderer::Render};
+    use crate::{Run, renderer::Render};
     use p_test::p_test;
 
     /// macros for runs
