@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 
+#[derive(Debug)]
 pub struct Markdown {
     pub(crate) front_matter: BTreeMap<String, String>,
     pub(crate) content: Vec<Block>,
 }
 
+#[derive(Debug)]
 pub(crate) enum Block {
     Heading { level: u8, runs: Vec<Run> },
     Paragraph(Vec<Run>),
@@ -15,18 +17,22 @@ pub(crate) enum Block {
     HorizontalRule,
 }
 
+#[derive(Debug)]
 pub(crate) struct ListItem {
     runs: Vec<Run>,
     nested: Option<Block>,
 }
 
+#[derive(Debug)]
 pub(crate) struct TRow {
     pub(crate) heading: bool,
     pub(crate) cells: Vec<TCell>,
 }
 
+#[derive(Debug)]
 pub(crate) struct TCell(Vec<Run>);
 
+#[derive(Debug)]
 pub(crate) enum Run {
     Text(String),
     Bold(Vec<Run>),

@@ -1,5 +1,6 @@
-use mackerel::Markerel;
 use std::{env, fs, io};
+
+use mackerel::parse_markdown;
 
 fn main() -> io::Result<()> {
     let files: Vec<String> = env::args().skip(1).collect();
@@ -7,13 +8,9 @@ fn main() -> io::Result<()> {
     for f in files {
         println!(">>> {f}");
         let source = fs::read_to_string(f)?;
-
-        let mut mackerel = Markerel::new(&source);
-        let tokens = mackerel.scan();
-
-        for t in tokens {
-            println!("{t:?}");
-        }
+        let markdown = parse_markdown(&source);
+        println!("{markdown:?}");
     }
+
     Ok(())
 }
