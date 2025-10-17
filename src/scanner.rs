@@ -117,6 +117,10 @@ mod tests {
     fn scanner_test() {
         #[rustfmt::skip]
         let markdown_text = indoc!("
+            ---
+            title: Test
+            date: 2025-10-24
+            ---
             # heading 1
 
             First *paragraph.* [Link](https://ntalbs.github.io)
@@ -125,6 +129,18 @@ mod tests {
         let mut scanner = Scanner::new(markdown_text);
         let tokens = scanner.scan();
         let expected_tokens = vec![
+            Token::Dash,
+            Token::Dash,
+            Token::Dash,
+            Token::Newline,
+            Token::Text("title: Test".into()),
+            Token::Newline,
+            Token::Text("date: 2025-10-24".into()),
+            Token::Newline,
+            Token::Dash,
+            Token::Dash,
+            Token::Dash,
+            Token::Newline,
             Token::Hash,
             Token::Whitespace,
             Token::Text("heading 1".into()),
