@@ -8,11 +8,16 @@ pub struct Markdown {
 pub(crate) enum Block {
     Heading { level: u8, runs: Vec<Run> },
     Paragraph(Vec<Run>),
-    List { ordered: bool, items: Vec<Run> },
+    List { ordered: bool, items: Vec<ListItem> },
     Table { thead: TRow, tbody: Vec<TRow> },
     Code,
     Quote,
     HorizontalRule,
+}
+
+pub(crate) struct ListItem {
+    runs: Vec<Run>,
+    nested: Option<Block>,
 }
 
 pub(crate) struct TRow {
