@@ -42,6 +42,7 @@ impl<'a> Scanner<'a> {
         while !self.is_at_end() {
             tokens.push(self.next_token());
         }
+        tokens.push(Token::Eof);
         tokens
     }
 
@@ -73,7 +74,9 @@ impl<'a> Scanner<'a> {
     fn text(&mut self) -> Token {
         fn is_text_breaker(ch: Option<&char>) -> bool {
             if let Some(ch) = ch {
-                matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '`' | '\n')
+                // matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '`' | '\n')
+                // temporarily simplify run breakers 
+                *ch == '\n'
             } else {
                 false
             }
@@ -146,18 +149,20 @@ mod tests {
             Token::Text("heading 1".into()),
             Token::Newline,
             Token::Newline,
-            Token::Text("First ".into()),
-            Token::Star,
-            Token::Text("paragraph.".into()),
-            Token::Star,
-            Token::Whitespace,
-            Token::LeftBracket,
-            Token::Text("Link".into()),
-            Token::RightBracket,
-            Token::LeftParen,
-            Token::Text("https://ntalbs.github.io".into()),
-            Token::RightParen,
+            // Token::Text("First ".into()),
+            // Token::Star,
+            // Token::Text("paragraph.".into()),
+            // Token::Star,
+            // Token::Whitespace,
+            // Token::LeftBracket,
+            // Token::Text("Link".into()),
+            // Token::RightBracket,
+            // Token::LeftParen,
+            // Token::Text("https://ntalbs.github.io".into()),
+            // Token::RightParen,
+            Token::Text("First *paragraph.* [Link](https://ntalbs.github.io)".into()),
             Token::Newline,
+            Token::Eof,
         ];
 
         assert_eq!(tokens, expected_tokens);

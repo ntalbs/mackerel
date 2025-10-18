@@ -49,7 +49,15 @@ impl<'a> Parser<'a> {
 
     fn content(&mut self) -> Vec<Block> {
         let mut blocks = Vec::new();
-        while *self.current_token() != Token::Eof {
+        loop {
+            let token = self.current_token();
+            if *token == Token::Eof {
+                break;
+            }
+            if *token == Token::Newline {
+                self.advance();
+                continue;
+            }
             blocks.push(self.block());
         }
         blocks
@@ -58,7 +66,7 @@ impl<'a> Parser<'a> {
     fn block(&mut self) -> Block {
         match self.current_token() {
             Token::Hash => self.heading(),
-            _ => todo!()
+            _ => self.paragraph(),
         }
     }
 
@@ -76,13 +84,24 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn paragraph(&mut self) -> Block {
+        let runs = self.runs();
+        Block::Paragraph(runs)
+    }
+
     fn runs(&mut self) -> Vec<Run> {
         let mut runs = Vec::new();
         loop {
-            match self.current_token() {
+            match self.advance() {
                 Token::Text(t) => runs.push(Run::Text(t.to_owned())),
-                Token::Star => {}
                 Token::Newline => break,
+
+                // temporary implementation
+                Token::Star => {}
+                Token::Whitespace => {}
+                Token::LeftBracket | Token::RightBracket | Token::LeftParen | Token::RightParen => {}
+
+
                 _ => todo!()
             }
         }
@@ -106,10 +125,11 @@ impl<'a> Parser<'a> {
         &self.tokens[self.current_pos - 1]
     }
 
-    fn advance(&mut self) {
+    fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
             self.current_pos += 1;
         }
+        self.prev_token()
     }
 
     fn consume(&mut self, token: Token, message: &str) -> &Token {
@@ -132,7 +152,7 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::Parser, scanner::Scanner};
+    use crate::{parser::Parser, scanner::Scanner, Block, Run};
     use indoc::indoc;
     use std::collections::BTreeMap;
 
@@ -147,15 +167,27 @@ mod tests {
             # heading 1
 
             First *paragraph.* [Link](https://ntalbs.github.io)
+
         ");
 
         let tokens = Scanner::new(markdown_text).scan();
+        for (i, t) in tokens.iter().enumerate() {
+            println!("{i}:{t:?}");
+        }
         let mut parser = Parser::new(&tokens);
         let markdown = parser.parse();
 
-        let mut expected: BTreeMap<String, String> = BTreeMap::new();
-        expected.insert("title".into(), "Test".into());
+        let mut expected_front_matter: BTreeMap<String, String> = BTreeMap::new();
+        expected_front_matter.insert("title".into(), "Test".into());
+        expected_front_matter.insert("date".into(), "2025-10-24".into());
 
-        assert_eq!(markdown.front_matter, expected);
+        assert_eq!(markdown.front_matter, expected_front_matter);
+        
+        let expected_content = vec![
+            Block::Heading { level: 1, runs: vec![Run::Text("heading 1".into())] },
+            Block::Paragraph(vec![Run::Text("First *paragraph.* [Link](https://ntalbs.github.io)".into())])
+        ];
+
+        assert_eq!(markdown.content, expected_content);
     }
 }

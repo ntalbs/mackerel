@@ -13,7 +13,7 @@ pub struct Markdown {
     pub(crate) content: Vec<Block>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum Block {
     Heading { level: u8, runs: Vec<Run> },
     Paragraph(Vec<Run>),
@@ -24,22 +24,22 @@ pub(crate) enum Block {
     HorizontalRule,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct ListItem {
     runs: Vec<Run>,
     nested: Option<Block>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct TRow {
     pub(crate) heading: bool,
     pub(crate) cells: Vec<TCell>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) struct TCell(Vec<Run>);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum Run {
     Text(String),
     Bold(Vec<Run>),
