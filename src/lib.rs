@@ -52,6 +52,5 @@ pub(crate) enum Run {
 
 pub fn parse_markdown<'a>(input: &'a str) -> Markdown {
     let tokens = Scanner::new(input).scan();
-    let markdown = Parser::new(&tokens).parse();
-    markdown
+    Parser::new(&tokens).parse()
 }

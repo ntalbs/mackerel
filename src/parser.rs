@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{Block, Markdown};
+use crate::{Block, Markdown, Run};
 use crate::scanner::Token;
 
 pub(crate) struct Parser<'a> {
@@ -25,10 +25,11 @@ impl<'a> Parser<'a> {
     fn front_matter(&mut self) -> BTreeMap<String, String> {
         let mut front_matter = BTreeMap::new();
         // begin front matter
-        self.consume(Token::Dash, "Invalid YAML delimiter.");
-        self.consume(Token::Dash, "Invalid YAML delimiter.");
-        self.consume(Token::Dash, "Invalid YAML delimiter.");
-        self.consume(Token::Newline, "Invalid YAML delimiter");
+        let message = "Invalid YAML delimiter.";
+        self.consume(Token::Dash, message);
+        self.consume(Token::Dash, message);
+        self.consume(Token::Dash, message);
+        self.consume(Token::Newline, message);
 
         while let Token::Text(text) = self.current_token() {
             let kv_pair: Vec<&str> = text.split(':').map(|s| s.trim()).collect();
@@ -38,16 +39,54 @@ impl<'a> Parser<'a> {
         }
 
         // end front matter
-        self.consume(Token::Dash, "Invalid YAML delimiter.");
-        self.consume(Token::Dash, "Invalid YAML delimiter.");
-        self.consume(Token::Dash, "Invalid YAML delimiter.");
-        self.consume(Token::Newline, "Invalid YAML delimiter");
+        self.consume(Token::Dash, message);
+        self.consume(Token::Dash, message);
+        self.consume(Token::Dash, message);
+        self.consume(Token::Newline, message);
 
-        return front_matter;
+        front_matter
     }
 
     fn content(&mut self) -> Vec<Block> {
-        todo!()
+        let mut blocks = Vec::new();
+        while *self.current_token() != Token::Eof {
+            blocks.push(self.block());
+        }
+        blocks
+    }
+
+    fn block(&mut self) -> Block {
+        match self.current_token() {
+            Token::Hash => self.heading(),
+            _ => todo!()
+        }
+    }
+
+    fn heading(&mut self) -> Block {
+        let mut level = 0;
+        while *self.current_token() == Token::Hash {
+            self.advance();
+            level += 1;
+        }
+
+        let runs = self.runs();
+        Block::Heading {
+            level, 
+            runs,
+        }
+    }
+
+    fn runs(&mut self) -> Vec<Run> {
+        let mut runs = Vec::new();
+        loop {
+            match self.current_token() {
+                Token::Text(t) => runs.push(Run::Text(t.to_owned())),
+                Token::Star => {}
+                Token::Newline => break,
+                _ => todo!()
+            }
+        }
+        runs
     }
 
     fn current_token(&self) -> &Token {
