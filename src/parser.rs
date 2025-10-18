@@ -5,12 +5,12 @@ use crate::scanner::Token;
 
 pub(crate) struct Parser<'a> {
     tokens: &'a [Token],
-    current: usize,
+    current_pos: usize,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a [Token]) -> Self {
-        Self { tokens, current: 0 }
+        Self { tokens, current_pos: 0 }
     }
 
     pub fn parse(&mut self) -> Markdown {
@@ -30,7 +30,7 @@ impl<'a> Parser<'a> {
         self.consume(Token::Dash, "Invalid YAML delimiter.");
         self.consume(Token::Newline, "Invalid YAML delimiter");
 
-        while let Token::Text(text) = self.peek() {
+        while let Token::Text(text) = self.current_token() {
             let kv_pair: Vec<&str> = text.split(':').map(|s| s.trim()).collect();
             front_matter.insert(kv_pair[0].into(), kv_pair[1].into());
             self.advance();
@@ -50,27 +50,44 @@ impl<'a> Parser<'a> {
         todo!()
     }
 
-    fn peek(&self) -> &Token {
-        &self.tokens[self.current]
+    fn current_token(&self) -> &Token {
+        &self.tokens[self.current_pos]
     }
 
-    fn advance(&mut self) -> &Token {
-        if self.is_at_end() {}
-        let token = &self.tokens[self.current];
-        self.current += 1;
-        token
+    fn next_token(&self) -> &Token {
+        if ! self.current_pos >= self.tokens.len() {
+            &Token::Eof
+        } else {
+            &self.tokens[self.current_pos + 1]
+        }
+    }
+
+    fn prev_token(&self) -> &Token {
+        // assums that this method never called at the beginning
+        &self.tokens[self.current_pos - 1]
+    }
+
+    fn advance(&mut self) {
+        if !self.is_at_end() {
+            self.current_pos += 1;
+        }
     }
 
     fn consume(&mut self, token: Token, message: &str) -> &Token {
-        if *self.peek() == token {
-            self.advance()
+        fn matches(t1: &Token, t2: &Token) -> bool {
+            t1 == t2 || matches!(t1, Token::Text(_)) && matches!(t2, Token::Text(_))
+        }
+
+        if matches(&token, self.current_token()) {
+            self.advance();
+            self.current_token()
         } else {
             panic!("{message}")
         }
     }
 
     fn is_at_end(&self) -> bool {
-        *self.peek() == Token::Eof
+        *self.current_token() == Token::Eof
     }
 }
 
