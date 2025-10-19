@@ -1,7 +1,8 @@
+use core::panic;
 use std::collections::BTreeMap;
 
-use crate::{Block, Markdown, Run};
 use crate::scanner::Token;
+use crate::{Block, Markdown, Run};
 
 pub(crate) struct Parser<'a> {
     tokens: &'a [Token],
@@ -10,7 +11,10 @@ pub(crate) struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a [Token]) -> Self {
-        Self { tokens, current_pos: 0 }
+        Self {
+            tokens,
+            current_pos: 0,
+        }
     }
 
     pub fn parse(&mut self) -> Markdown {
@@ -24,25 +28,22 @@ impl<'a> Parser<'a> {
 
     fn front_matter(&mut self) -> BTreeMap<String, String> {
         let mut front_matter = BTreeMap::new();
-        // begin front matter
         let message = "Invalid YAML delimiter.";
-        self.consume(Token::Dash, message);
-        self.consume(Token::Dash, message);
-        self.consume(Token::Dash, message);
-        self.consume(Token::Newline, message);
+
+        // begin front matter
+        self.consume(Token::Dash(3), message);
+        self.consume(Token::Newline(1), message);
 
         while let Token::Text(text) = self.current_token() {
             let kv_pair: Vec<&str> = text.split(':').map(|s| s.trim()).collect();
             front_matter.insert(kv_pair[0].into(), kv_pair[1].into());
             self.advance();
-            self.consume(Token::Newline, "Expected newline");
+            self.consume(Token::Newline(1), "Expected newline");
         }
 
         // end front matter
-        self.consume(Token::Dash, message);
-        self.consume(Token::Dash, message);
-        self.consume(Token::Dash, message);
-        self.consume(Token::Newline, message);
+        self.consume(Token::Dash(3), message);
+        self.consume(Token::Newline(1), message);
 
         front_matter
     }
@@ -54,7 +55,7 @@ impl<'a> Parser<'a> {
             if *token == Token::Eof {
                 break;
             }
-            if *token == Token::Newline {
+            if *token == Token::Newline(2) {
                 self.advance();
                 continue;
             }
@@ -65,60 +66,96 @@ impl<'a> Parser<'a> {
 
     fn block(&mut self) -> Block {
         match self.current_token() {
-            Token::Hash => self.heading(),
+            Token::Hash(n) => self.heading(*n),
+            Token::Star(1) | Token::Dash(1) | Token::Plus => self.list(),
+            Token::RightAngleBracket => self.blockquote(),
             _ => self.paragraph(),
         }
     }
 
-    fn heading(&mut self) -> Block {
-        let mut level = 0;
-        while *self.current_token() == Token::Hash {
-            self.advance();
-            level += 1;
-        }
+    fn heading(&mut self, level: u8) -> Block {
+        self.advance();
+        self.consume(Token::Whitespace, "expected space");
+        let runs = self.runs(Token::Newline(1));
+        Block::Heading { level, runs }
+    }
 
-        let runs = self.runs();
-        Block::Heading {
-            level, 
-            runs,
-        }
+    fn list(&mut self) -> Block {
+        todo!()
+    }
+
+    fn blockquote(&mut self) -> Block {
+        todo!()
     }
 
     fn paragraph(&mut self) -> Block {
-        let runs = self.runs();
+        let runs = self.runs(Token::Newline(2));
         Block::Paragraph(runs)
     }
 
-    fn runs(&mut self) -> Vec<Run> {
+    fn runs(&mut self, until: Token) -> Vec<Run> {
         let mut runs = Vec::new();
         loop {
-            match self.advance() {
+            let token = self.advance();
+            if *token == until {
+                break;
+            }
+            match token {
+                Token::Newline(2) => break,
                 Token::Text(t) => runs.push(Run::Text(t.to_owned())),
-                Token::Newline => break,
 
-                // temporary implementation
-                Token::Star => {}
-                Token::Whitespace => {}
-                Token::LeftBracket | Token::RightBracket | Token::LeftParen | Token::RightParen => {}
+                Token::Star(1) => runs.push(Run::Italic(self.runs(Token::Star(1)))),
+                Token::Star(2) => runs.push(Run::Bold(self.runs(Token::Star(2)))),
+                Token::Star(3) => runs.push(Run::Bold(vec![Run::Italic(self.runs(Token::Star(3)))])),
 
-
-                _ => todo!()
+                Token::LeftBracket => runs.push(self.link()),
+                Token::Whitespace => runs.push(Run::Text(" ".into())),
+                // Token::LeftBracket | Token::RightBracket | Token::LeftParen | Token::RightParen => {}
+                _ => {
+                    println!(">>>>>>>>");
+                    println!("{:?}", self.token_at(0));
+                    println!(">>>>>>>>");
+                    todo!()
+                }
             }
         }
         runs
     }
 
-    fn current_token(&self) -> &Token {
-        &self.tokens[self.current_pos]
-    }
+    fn link(&mut self) -> Run {
+        let runs = self.runs(Token::RightBracket);
+        self.consume(Token::LeftParen, "expected (");
+        let Token::Text(url) = self.advance() else {
+            panic!("expected Token::Text(url)");
+        };
+        let url = url.clone();
+        self.consume(Token::RightParen, "expected )");
 
-    fn next_token(&self) -> &Token {
-        if ! self.current_pos >= self.tokens.len() {
-            &Token::Eof
-        } else {
-            &self.tokens[self.current_pos + 1]
+        Run::Link {
+            inner: runs,
+            url: url.clone(),
         }
     }
+
+    fn token_at(&self, offset: usize) -> &Token {
+        if self.current_pos + offset < self.tokens.len() {
+            &self.tokens[self.current_pos + offset]
+        } else {
+            &Token::Eof
+        }
+    }
+
+    fn current_token(&self) -> &Token {
+        self.token_at(0)
+    }
+
+    // fn next_token(&self) -> &Token {
+    //     if ! self.current_pos >= self.tokens.len() {
+    //         &Token::Eof
+    //     } else {
+    //         &self.tokens[self.current_pos + 1]
+    //     }
+    // }
 
     fn prev_token(&self) -> &Token {
         // assums that this method never called at the beginning
@@ -152,7 +189,7 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{parser::Parser, scanner::Scanner, Block, Run};
+    use crate::{Block, Run, parser::Parser, scanner::Scanner};
     use indoc::indoc;
     use std::collections::BTreeMap;
 
@@ -168,6 +205,8 @@ mod tests {
 
             First *paragraph.* [Link](https://ntalbs.github.io)
 
+            ***bold italic***, **bold**
+
         ");
 
         let tokens = Scanner::new(markdown_text).scan();
@@ -182,10 +221,26 @@ mod tests {
         expected_front_matter.insert("date".into(), "2025-10-24".into());
 
         assert_eq!(markdown.front_matter, expected_front_matter);
-        
+
         let expected_content = vec![
-            Block::Heading { level: 1, runs: vec![Run::Text("heading 1".into())] },
-            Block::Paragraph(vec![Run::Text("First *paragraph.* [Link](https://ntalbs.github.io)".into())])
+            Block::Heading {
+                level: 1,
+                runs: vec![Run::Text("heading 1".into())],
+            },
+            Block::Paragraph(vec![
+                Run::Text("First ".into()),
+                Run::Italic(vec![Run::Text("paragraph.".into())]),
+                Run::Text(" ".into()),
+                Run::Link {
+                    inner: vec![Run::Text("Link".into())],
+                    url: "https://ntalbs.github.io".into(),
+                },
+            ]),
+            Block::Paragraph(vec![
+                Run::Bold(vec![Run::Italic(vec![Run::Text("bold italic".into())])]),
+                Run::Text(", ".into()),
+                Run::Bold(vec![Run::Text("bold".into())]),
+            ]),
         ];
 
         assert_eq!(markdown.content, expected_content);

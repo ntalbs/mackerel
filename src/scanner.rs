@@ -3,16 +3,16 @@ use std::{iter::Peekable, str::Chars};
 #[derive(Debug, PartialEq)]
 pub enum Token {
     Text(String),
-    Newline,
+    Newline(u8),
     Whitespace,
-    Hash,
-    Star,
+    Hash(u8),
+    Star(u8),
     Plus,
     Underscore,
     Exclamination,
     Tilde,
-    Backtick,
-    Dash,
+    Backtick(u8),
+    Dash(u8),
     VerticalLine,
     Caret,
     LeftParen,
@@ -47,18 +47,15 @@ impl<'a> Scanner<'a> {
     }
 
     fn next_token(&mut self) -> Token {
-        self.current_char = self.advance();
-        match self.current_char {
-            Some('\n') => Token::Newline,
+        match self.advance() {
+            Some('\n') | Some('#') | Some('*') | Some('`') | Some('-') => {
+                self.repeatable(self.current_char.unwrap())
+            }
             Some(' ') => Token::Whitespace,
-            Some('#') => Token::Hash,
-            Some('*') => Token::Star,
             Some('+') => Token::Plus,
             Some('_') => Token::Underscore,
             Some('!') => Token::Exclamination,
             Some('~') => Token::Tilde,
-            Some('`') => Token::Backtick,
-            Some('-') => Token::Dash,
             Some('|') => Token::VerticalLine,
             Some('^') => Token::Caret,
             Some('(') => Token::LeftParen,
@@ -71,27 +68,43 @@ impl<'a> Scanner<'a> {
         }
     }
 
+    fn repeatable(&mut self, ch: char) -> Token {
+        let mut cnt = 1;
+        while self.peek() == Some(&ch) {
+            cnt += 1;
+            self.advance();
+        }
+        match ch {
+            '\n' => Token::Newline(cnt),
+            '#' => Token::Hash(cnt),
+            '*' => Token::Star(cnt),
+            '`' => Token::Backtick(cnt),
+            '-' => Token::Dash(cnt),
+            _ => panic!("Invalid repeated char."),
+        }
+    }
+
     fn text(&mut self) -> Token {
-        fn is_text_breaker(ch: Option<&char>) -> bool {
-            if let Some(ch) = ch {
-                // matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '`' | '\n')
-                // temporarily simplify run breakers 
-                *ch == '\n'
-            } else {
-                false
-            }
+        fn is_text_breaker(ch: char) -> bool {
+            matches!(ch, '*' | '_' | '[' | ']' | '(' | ')' | '`' | '\n')
         }
 
         let mut text = String::new();
         loop {
-            text.push(self.current_char.unwrap());
-            if is_text_breaker(self.peek()) {
+            let Some(current_ch) = self.current_char else {
+                break;
+            };
+            text.push(current_ch);
+            
+            let Some(&next_ch) = self.peek() else {
+                break;
+            };
+
+            if is_text_breaker(next_ch) {
                 break;
             }
 
-            if let Some('\n') = self.advance() {
-                break;
-            }
+            self.advance();
         }
         Token::Text(text)
     }
@@ -132,36 +145,30 @@ mod tests {
         let mut scanner = Scanner::new(markdown_text);
         let tokens = scanner.scan();
         let expected_tokens = vec![
-            Token::Dash,
-            Token::Dash,
-            Token::Dash,
-            Token::Newline,
+            Token::Dash(3),
+            Token::Newline(1),
             Token::Text("title: Test".into()),
-            Token::Newline,
+            Token::Newline(1),
             Token::Text("date: 2025-10-24".into()),
-            Token::Newline,
-            Token::Dash,
-            Token::Dash,
-            Token::Dash,
-            Token::Newline,
-            Token::Hash,
+            Token::Newline(1),
+            Token::Dash(3),
+            Token::Newline(1),
+            Token::Hash(1),
             Token::Whitespace,
             Token::Text("heading 1".into()),
-            Token::Newline,
-            Token::Newline,
-            // Token::Text("First ".into()),
-            // Token::Star,
-            // Token::Text("paragraph.".into()),
-            // Token::Star,
-            // Token::Whitespace,
-            // Token::LeftBracket,
-            // Token::Text("Link".into()),
-            // Token::RightBracket,
-            // Token::LeftParen,
-            // Token::Text("https://ntalbs.github.io".into()),
-            // Token::RightParen,
-            Token::Text("First *paragraph.* [Link](https://ntalbs.github.io)".into()),
-            Token::Newline,
+            Token::Newline(2),
+            Token::Text("First ".into()),
+            Token::Star(1),
+            Token::Text("paragraph.".into()),
+            Token::Star(1),
+            Token::Whitespace,
+            Token::LeftBracket,
+            Token::Text("Link".into()),
+            Token::RightBracket,
+            Token::LeftParen,
+            Token::Text("https://ntalbs.github.io".into()),
+            Token::RightParen,
+            Token::Newline(1),
             Token::Eof,
         ];
 
