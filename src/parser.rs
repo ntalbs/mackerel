@@ -165,8 +165,10 @@ impl<'a> Parser<'a> {
     fn advance(&mut self) -> &Token {
         if !self.is_at_end() {
             self.current_pos += 1;
+            self.prev_token()
+        } else {
+            &Token::Eof
         }
-        self.prev_token()
     }
 
     fn consume(&mut self, token: Token, message: &str) -> &Token {
