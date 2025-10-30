@@ -35,7 +35,7 @@ pub(crate) struct TRow {
     pub(crate) heading: bool,
     pub(crate) cells: Vec<TCell>,
 }
-
+ 
 #[derive(Debug, PartialEq)]
 pub(crate) struct TCell(Vec<Run>);
 

@@ -197,7 +197,22 @@ impl<'a> Parser<'a> {
 mod tests {
     use crate::{Block, Run, parser::Parser, scanner::Scanner};
     use indoc::indoc;
+    use p_test::p_test;
     use std::collections::BTreeMap;
+
+    #[p_test(
+        ("# heading 1", vec![Block::Heading {level: 1, runs: vec![Run::Text("heading 1".into())]}]),
+        ("## heading 2", vec![Block::Heading {level: 2, runs: vec![Run::Text("heading 2".into())]}]),
+        ("### heading 3", vec![Block::Heading {level: 3, runs: vec![Run::Text("heading 3".into())]}]),
+        ("#### heading 4", vec![Block::Heading {level: 4, runs: vec![Run::Text("heading 4".into())]}]),
+        ("##### heading 5", vec![Block::Heading {level: 5, runs: vec![Run::Text("heading 5".into())]}]),
+        ("###### heading 6", vec![Block::Heading {level: 6, runs: vec![Run::Text("heading 6".into())]}]),
+    )]
+    fn test_heading(input: &str, expected: Vec<Block>) {
+        let tokens = Scanner::new(input).scan();
+        let markdown = Parser::new(&tokens).parse();
+        assert_eq!(markdown.content, expected)
+    }
 
     #[test]
     fn test() {
