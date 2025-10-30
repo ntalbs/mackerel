@@ -31,7 +31,10 @@ impl<'a> Parser<'a> {
         let message = "Invalid YAML delimiter.";
 
         // begin front matter
-        self.consume(Token::Dash(3), message);
+        match self.consume(Token::Dash(3), message) {
+            Ok(_) => {}
+            Err(_) => return front_matter,
+        }
         self.consume(Token::Newline(1), message);
 
         while let Token::Text(text) = self.current_token() {
@@ -110,10 +113,11 @@ impl<'a> Parser<'a> {
 
                 Token::LeftBracket => runs.push(self.link()),
                 Token::Whitespace => runs.push(Run::Text(" ".into())),
+                Token::Eof => break,
                 // Token::LeftBracket | Token::RightBracket | Token::LeftParen | Token::RightParen => {}
                 _ => {
                     println!(">>>>>>>>");
-                    println!("{:?}", self.token_at(0));
+                    println!("{:?}", self.tokens);
                     println!(">>>>>>>>");
                     todo!()
                 }
@@ -171,16 +175,16 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn consume(&mut self, token: Token, message: &str) -> &Token {
+    fn consume(&mut self, token: Token, message: &'a str) -> Result<&Token, &'a str> {
         fn matches(t1: &Token, t2: &Token) -> bool {
             t1 == t2 || matches!(t1, Token::Text(_)) && matches!(t2, Token::Text(_))
         }
 
         if matches(&token, self.current_token()) {
             self.advance();
-            self.current_token()
+            Ok(self.current_token())
         } else {
-            panic!("{message}")
+            Err(message)
         }
     }
 
